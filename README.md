@@ -24,8 +24,7 @@ if OTP input from mobile then mobile varified. User also sent the resent OTP if 
 5. now open terminal and path set to your current project and run
     ```bash
         python manage.py makemigrations
-    ```
-    ```bash
+
         python manage.py migrate
     ```
 
