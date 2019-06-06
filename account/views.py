@@ -106,8 +106,7 @@ class Login(generics.CreateAPIView):
             if user is None:
                 message = _("Please enter valid {device} and password")
                 message = message.format(device=next(iter(kwargs)))
-                return Response(
-                    helper.render(False, None, message, status.HTTP_401_UNAUTHORIZED))
+                return Response(helper.render(False, None, message, status.HTTP_401_UNAUTHORIZED))
 
             is_active = getattr(user, 'is_active', None)
             if not is_active:
@@ -117,3 +116,7 @@ class Login(generics.CreateAPIView):
         except Exception as ex:
             return Response(helper.render(False, None, ex.args, status.HTTP_500_INTERNAL_SERVER_ERROR))
         return Response(helper.render(True, {"token": user.token}, "success", status.HTTP_201_CREATED))
+
+
+class UserProfile(generics.ListAPIView):
+    pass

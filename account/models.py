@@ -92,7 +92,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self._generate_jwt_token()
 
     def clean(self):
-        super().clean()
+        super.clean()
         self.email = self.__class__.objects.normalize_email(self.email)
 
     def get_full_name(self):
