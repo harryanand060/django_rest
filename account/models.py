@@ -29,7 +29,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         _('mobile'), max_length=16, unique=True,
         help_text=_("Required. mobile number must be entered in the format: '+999999999'."),
         validators=[validate_mobile],
-        error_messages={'unique': _("A user with that mobile no already exists.")}, )
+        error_messages={'unique': _("A user with that mobile no already exists")}, )
 
     email = models.EmailField(
         _('Email Address'), max_length=100, unique=True,
