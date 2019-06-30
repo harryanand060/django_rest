@@ -11,7 +11,7 @@ from django.contrib.auth import authenticate, login
 
 class Register(generics.CreateAPIView):
     """
-      Account Register
+      Account Register with mobile or email and password
     """
 
     model = models.User
@@ -19,6 +19,12 @@ class Register(generics.CreateAPIView):
     serializer_class = serializers.UserCreateSerializer
 
     def post(self, request, *args, **kwargs):
+        """
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
@@ -43,11 +49,22 @@ class Register(generics.CreateAPIView):
 
 
 class Verify(generics.CreateAPIView):
+    """
+    Verify Registred email or mobile with otp
+    mobile otp only verify mobile so user can only login with mobile
+    email otp only verify email so user can only login with email
+    """
     # model = models.User
     permission_classes = (permissions.AllowAny,)
     serializer_class = serializers.UserVerifySerializer
 
     def post(self, request, *args, **kwargs):
+        """
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
@@ -69,11 +86,20 @@ class Verify(generics.CreateAPIView):
 
 
 class Resent(generics.CreateAPIView):
+    """
+    Resent OTP
+    """
     # model = models.User
     permission_classes = (permissions.AllowAny,)
     serializer_class = serializers.ResentSerializer
 
     def post(self, request, *args, **kwargs):
+        """
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
@@ -89,13 +115,18 @@ class Resent(generics.CreateAPIView):
 
 class Login(generics.CreateAPIView):
     """
-     Account Login
+     Account Login with mobile or email with password
     """
-    from rest_framework_jwt.serializers import JSONWebTokenSerializer, jwt_payload_handler, jwt_encode_handler
     permission_classes = (permissions.AllowAny,)
     serializer_class = serializers.UserLoginSerializer
 
     def post(self, request, *args, **kwargs):
+        """
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
