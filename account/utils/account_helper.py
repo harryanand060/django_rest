@@ -31,6 +31,5 @@ def verification_mail(user, token, time_validity):
             {'name': user.get_full_name().title(), 'otp': token, 'time_validity': time_validity})
         user.email_user("SMAS OTP Verification", None, "admin@smas.com", html_message=html_message)
     except Exception as ex:
-        l
         raise Exception('mail failed to sent due to {}'.format(ex))  # ex.args
     return True
