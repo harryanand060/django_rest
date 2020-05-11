@@ -51,7 +51,7 @@ class Register(generics.CreateAPIView):
 class Verify(generics.CreateAPIView):
     """
     Verify Registred email or mobile with otp
-    mobile otp only verify mobile so user can only login with mobile
+    mobile otp o    nly verify mobile so user can only login with mobile
     email otp only verify email so user can only login with email
     """
     # model = models.User

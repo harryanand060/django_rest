@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from binascii import hexlify, unhexlify
 from os import urandom
 from django.core.exceptions import ValidationError
-from django.utils import six
+import six
 from django.conf import settings
 from .account_helper import *
 
