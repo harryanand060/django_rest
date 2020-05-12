@@ -8,8 +8,6 @@ class UserCreateSerializer(serializers.ModelSerializer):
     # """
     #   UserCreateSerializer is a model serializer which includes the attributes that are required for registering a user.
     #   Examples
-    # --------
-    # >>> print(UserCreateSerializer(data={'username':'test@testing.com', 'name':'test', 'email': 'test@testing.com', 'mobile' : '123456', 'password': '123780'}))
     # """
     # password = serializers.CharField(max_length=128, min_length=8, write_only=True)
     password = serializers.CharField(
@@ -45,3 +43,9 @@ class UserLoginSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('device', 'password',)
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('mobile', 'email', 'is_active','is_superuser')

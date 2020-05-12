@@ -2,7 +2,12 @@ from rest_framework.views import exception_handler
 
 
 def render(*args):
-    return {"status": args[0], "data": args[1], "message": args[2], "status_code": args[3], }, args[3]
+    return {
+               "status": args[0],
+               "data": args[1],
+               "message": args[2],
+               "status_code": args[3]
+           }, args[3]
 
 
 def custom_exception(exc, context):
@@ -16,4 +21,3 @@ def custom_exception(exc, context):
         response.data = result
 
     return response
-

@@ -82,7 +82,9 @@ class Verify(generics.CreateAPIView):
 
         except Exception as ex:
             return Response(helper.render(False, None, ex.args, status.HTTP_500_INTERNAL_SERVER_ERROR))
-        return Response(helper.render(True, {"token": user.token}, _("successful"), status.HTTP_201_CREATED))
+        data = {"token": user.token,
+                "user": serializers.UserSerializer(user, context={'request': request}).data}
+        return Response(helper.render(True, data, _("Success"), status.HTTP_201_CREATED))
 
 
 class Resent(generics.CreateAPIView):
@@ -146,8 +148,24 @@ class Login(generics.CreateAPIView):
 
         except Exception as ex:
             return Response(helper.render(False, None, ex.args, status.HTTP_500_INTERNAL_SERVER_ERROR))
-        return Response(helper.render(True, {"token": user.token}, "success", status.HTTP_201_CREATED))
+        data = {"token": user.token,
+                "user": serializers.UserSerializer(user, context={'request': request}).data
+                }
+        return Response(helper.render(True, data, "success", status.HTTP_201_CREATED))
 
 
-class UserProfile(generics.ListAPIView):
-    pass
+class Profiles(generics.ListAPIView):
+    model = models.User
+    serializer_class = serializers.UserSerializer
+
+    def list(self, request, *args, **kwargs):
+        """
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        queryset = self.model.objects.all()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(helper.render(True, serializer.data, "success", status.HTTP_201_CREATED))
