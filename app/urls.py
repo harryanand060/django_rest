@@ -20,7 +20,7 @@ from rest_framework.documentation import include_docs_urls
 
 urlpatterns = [
     path('', lambda request: redirect('docs/', permanent=False)),
-    re_path(r'^docs/', include_docs_urls(title='My API title', authentication_classes=[],
+    re_path(r'^docs/', include_docs_urls(title='Rest API', authentication_classes=[],
                                          permission_classes=[])),
     path('admin/', admin.site.urls),
     path('api/user/', include('account.urls')),

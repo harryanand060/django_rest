@@ -20,7 +20,7 @@ compatible with >=django3.0
 
 3.
     ```bash
-       pip isntall requirement.txt
+       pip isntall -r requirement.txt
     ```
 (after coping the project to your directory where you create projcet).
 
@@ -49,6 +49,14 @@ compatible with >=django3.0
     ```bash
         python manage.py runserver
     ```
+
+#Testing
+
+Open the browser with given runserver IP for ex: http://127.0.0.1:8000/
+Here you get all the listed API Docs
+
+
+
 
 
 
