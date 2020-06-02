@@ -13,8 +13,6 @@ from rest_framework_jwt.settings import api_settings
 import logging
 import time
 
-
-
 from datetime import datetime
 
 # from . import validators
@@ -122,7 +120,7 @@ def default_key():
 
 
 class Verification(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, related_name='verification', on_delete=models.CASCADE)
     unverified_mobile = models.CharField(
         _('mobile'), max_length=16, unique=True,
         help_text=_("Required. mobile number must be entered in the format: '+999999999'."),
@@ -179,6 +177,7 @@ class Verification(models.Model):
         This string is used when a `User` is printed in the console.
         """
         return str(self.user)
+
     @property
     def bin_key(self):
         return unhexlify(self.secret_key.encode())
@@ -194,6 +193,7 @@ class Verification(models.Model):
         time_validity = self.step // 60
         logger.debug("Token has been sent to %s " % self.unverified_mobile)
         account_helper.verification_mail(self.user, token, time_validity)
+        account_helper.sent_sms(self.user, token, time_validity)
         return token
 
     def verify_otp(self, type, token, tolerance=0):

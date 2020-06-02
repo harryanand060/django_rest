@@ -146,6 +146,15 @@ class Login(generics.CreateAPIView):
                 data = {"active": False}
                 return Response(helper.render(False, data, "account is not activated", status.HTTP_401_UNAUTHORIZED))
 
+            if kwargs.get(user.EMAIL_FIELD, False) and not user.verification.email_verified:
+                data = {"email verification": False}
+                return Response(helper.render(False, data, "email is not verified! you can not login with email", status.HTTP_401_UNAUTHORIZED))
+
+            elif kwargs.get(user.USERNAME_FIELD, False) and not user.verification.mobile_verified:
+                data = {"mobile verification": False}
+                return Response(helper.render(False, data, "mobile is not verified! you can not login with mobile", status.HTTP_401_UNAUTHORIZED))
+
+
         except Exception as ex:
             return Response(helper.render(False, None, ex.args, status.HTTP_500_INTERNAL_SERVER_ERROR))
         data = {"token": user.token,

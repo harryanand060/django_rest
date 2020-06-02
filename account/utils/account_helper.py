@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.template.loader import render_to_string
+import requests
 
 
 def email_or_mobile(value):
@@ -11,6 +12,7 @@ def email_or_mobile(value):
         return {UserModel.USERNAME_FIELD: value}
     else:
         return {UserModel.USERNAME_FIELD: value}
+
 
 
 def user_exists(**kwargs):
@@ -33,3 +35,20 @@ def verification_mail(user, token, time_validity):
     except Exception as ex:
         raise Exception('mail failed to sent due to {}'.format(ex))  # ex.args
     return True
+
+
+def sent_sms(user, token, time_validity):
+    try:
+        data = settings.SMS_GETWAY[settings.SMS_GETWAY["DEFAULT"]]
+        message = "{} is your SECRET One Time password for Login only valid for {} min"
+        message = message.format(token, time_validity)
+        url = data['url']
+        data.pop('url')
+        data.update({'message': message, 'numbers': user.mobile})
+        response = requests.get(url, params=data)
+        if response.status_code == 200:
+            # msg = response.content
+            return True
+    except Exception as ex:
+        raise Exception("sms failed to sent due to {}".format(ex))
+    raise Exception("sms failed to sent")
