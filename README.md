@@ -25,9 +25,19 @@ compatible with >=django3.0
 (after coping the project to your directory where you create projcet).
 
 4. Inside smas_client we have local_setting so change
+
+    ### EMAIL Setting
+    
     EMAIL_HOST_USER = '**********@gmail.com'
-    EMAIL_HOST_PASSWORD = '*******'
-    for email settings.
+    EMAIL_HOST_PASSWORD = '*******'.
+    
+    ### SMS Getway Setting
+     'url': 'http://sms.abc.com/sendSMS',
+     'apikey': '**********************',
+     'username': '*****************',
+     'sendername': '**************',
+     'smstype': '***********'.
+    
 
 5. now open terminal and path set to your current project and run
     ```bash
