@@ -1,14 +1,13 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 import re
+import six
+from binascii import unhexlify
 from django.core import validators
 from django.utils.deconstruct import deconstructible
 from django.utils.translation import gettext_lazy as _
-from binascii import hexlify, unhexlify
-from os import urandom
 from django.core.exceptions import ValidationError
-import six
 from django.conf import settings
-from .account_helper import *
+from common.helper import CommonHelper
 
 
 @deconstructible
@@ -37,10 +36,13 @@ class MobileValidator(validators.RegexValidator):
     message = _("Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed.")
 
 
+validate_mobile = MobileValidator()
+
+
 def validate_user(value):
-    kwargs = email_or_mobile(value)
+    kwargs = CommonHelper.email_or_mobile(value)
     if kwargs:
-        if not user_exists(**kwargs):
+        if not CommonHelper.user_exists(**kwargs):
             raise ValidationError(_("User not exists"))
     else:
         raise ValidationError(_("Please enter valid email or mobile"))
@@ -87,18 +89,3 @@ def hex_validator(length=0):
             raise ValidationError('{0} does not represent exactly {1} bytes.'.format(value, length))
 
     return _validator
-
-
-def random_hex(length=20):
-    """
-    Returns a string of random bytes encoded as hex. This uses
-    :func:`os.urandom`, so it should be suitable for generating cryptographic
-    keys.
-
-    :param int length: The number of (decoded) bytes to return.
-
-    :returns: A string of hex digits.
-    :rtype: bytes
-
-    """
-    return hexlify(urandom(length))

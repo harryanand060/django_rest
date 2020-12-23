@@ -1,12 +1,21 @@
 # Create your views here.
 
+import uuid
 from rest_framework.response import Response
-from rest_framework import generics, permissions, status
+from rest_framework import generics
+from rest_framework import permissions
+from rest_framework import status
+from rest_framework_jwt.serializers import RefreshJSONWebTokenSerializer
+from rest_framework_jwt.views import JSONWebTokenAPIView
 from django.utils.text import gettext_lazy as _
-from . import serializers, models
-from common import helper
-from .utils import account_helper
-from django.contrib.auth import authenticate, login
+
+from django.contrib.auth import authenticate
+from django.contrib.auth import logout
+from django.contrib.auth import login
+
+from common.helper import CommonHelper
+from account import serializers
+from account import models
 
 
 class Register(generics.CreateAPIView):
@@ -20,13 +29,16 @@ class Register(generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
         """
-        :param request:
-        :param args:
-        :param kwargs:
-        :return:
+        Method used for user registration with mobile or email, password, first name , last name,
+        :param request: using this parameter user get email or mobile no and password, name
+        :param args: None
+        :param kwargs: None
+        :return:True: Success
+                False: Failed
         """
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            raise serializers.ValidationError(serializer.errors, code=status.HTTP_200_OK)
         try:
             user = self.model.objects.create_user(
                 mobile=serializer.initial_data['mobile'],
@@ -44,14 +56,14 @@ class Register(generics.CreateAPIView):
             message = _("Verification Token sent to {phone} and {email} ")
             message = message.format(phone=user.mobile, email=user.email)
         except Exception as ex:
-            return Response(helper.render(False, None, ex.args, status.HTTP_500_INTERNAL_SERVER_ERROR))
-        return Response(helper.render(True, None, message, status.HTTP_201_CREATED))
+            return Response(CommonHelper.render(False, None, ex.args, status.HTTP_200_OK))
+        return Response(CommonHelper.render(True, None, message, status.HTTP_201_CREATED))
 
 
 class Verify(generics.CreateAPIView):
     """
     Verify Registred email or mobile with otp
-    mobile otp o    nly verify mobile so user can only login with mobile
+    mobile otp only verify mobile so user can only login with mobile
     email otp only verify email so user can only login with email
     """
     # model = models.User
@@ -60,31 +72,33 @@ class Verify(generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
         """
-        :param request:
-        :param args:
-        :param kwargs:
-        :return:
+        Verify Registred email or mobile with otp
+        mobile otp only verify mobile so user can only login with mobile
+        email otp only verify email so user can only login with email
+        :param request: using this parameter user get email or mobile no.
+        :param args: None
+        :param kwargs: None
+        :return:True: Success
+                False: Failed
         """
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            raise serializers.ValidationError(serializer.errors, code=status.HTTP_200_OK)
         try:
-            kwargs = account_helper.email_or_mobile(serializer.initial_data["device"])
+            kwargs = CommonHelper.email_or_mobile(serializer.initial_data["device"])
             key = next(iter(kwargs))
-            user = account_helper.user_exists(**kwargs)
+            user = CommonHelper.user_exists(**kwargs)
             if not user:
-                return Response(helper.render(False, None, _("User not exists"), status.HTTP_400_BAD_REQUEST))
+                return Response(CommonHelper.render(False, None, _("User not exists"), status.HTTP_200_OK))
             verify = user.verification.verify_otp(key, serializer.initial_data["otp"])
             if not verify:
-                return Response(helper.render(False, None, _("invalid otp"), status.HTTP_401_UNAUTHORIZED))
-
+                return Response(CommonHelper.render(False, None, _("invalid otp"), status.HTTP_200_OK))
             # login and create session
             login(request, user)
-
         except Exception as ex:
-            return Response(helper.render(False, None, ex.args, status.HTTP_500_INTERNAL_SERVER_ERROR))
-        data = {"token": user.token,
-                "user": serializers.UserSerializer(user, context={'request': request}).data}
-        return Response(helper.render(True, data, _("Success"), status.HTTP_201_CREATED))
+            return Response(CommonHelper.render(False, None, ex.args, status.HTTP_200_OK))
+        data = {"token": user.token}
+        return Response(CommonHelper.render(True, data, _("Success"), status.HTTP_201_CREATED))
 
 
 class Resent(generics.CreateAPIView):
@@ -97,22 +111,25 @@ class Resent(generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
         """
+        Resent OTP on mail and email. OTP valid for 15 min only.
         :param request:
         :param args:
         :param kwargs:
         :return:
         """
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            raise serializers.ValidationError(serializer.errors, code=status.HTTP_200_OK)
         try:
-            kwargs = account_helper.email_or_mobile(serializer.initial_data["device"])
-            user = account_helper.user_exists(**kwargs)
+            kwargs = CommonHelper.email_or_mobile(serializer.initial_data["device"])
+            user = CommonHelper.user_exists(**kwargs)
+            if not user:
+                return Response(CommonHelper.render(False, None, "User not exists", status.HTTP_200_OK))
             user.verification.generate_otp()
-            message = _("Verification Token sent to {phone} and {email}")
-            message = message.format(phone=user.mobile, email=user.email)
+            message = f"Verification Token sent to {user.mobile} and {user.email}"
         except Exception as ex:
-            return Response(helper.render(False, None, ex.args, status.HTTP_500_INTERNAL_SERVER_ERROR))
-        return Response(helper.render(True, None, message, status.HTTP_201_CREATED))
+            return Response(CommonHelper.render(False, None, ex.args, status.HTTP_200_OK))
+        return Response(CommonHelper.render(True, None, message, status.HTTP_201_CREATED))
 
 
 class Login(generics.CreateAPIView):
@@ -124,57 +141,120 @@ class Login(generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
         """
-        :param request:
-        :param args:
-        :param kwargs:
-        :return:
+        Method used for authentication of the system. using registered mobile or email user can login to the system
+        :param request: using this parameter user get email or mobile no and password
+        :param args: None
+        :param kwargs: None
+        :return: After successful authentication user get status as True and data as auth token
         """
         serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid(raise_exception=True):
+            raise serializers.ValidationError(serializer.errors, code=status.HTTP_200_OK)
         try:
-            kwargs = account_helper.email_or_mobile(serializer.initial_data["device"])
+            kwargs = CommonHelper.email_or_mobile(serializer.initial_data["device"])
             credentials = {'password': serializer.initial_data['password']}
             credentials.update(**kwargs)
             user = authenticate(**credentials)
             if user is None:
                 message = _("Please enter valid {device} and password")
                 message = message.format(device=next(iter(kwargs)))
-                return Response(helper.render(False, None, message, status.HTTP_401_UNAUTHORIZED))
+                return Response(CommonHelper.render(False, None, message, status.HTTP_200_OK))
 
             is_active = getattr(user, 'is_active', None)
             if not is_active:
                 data = {"active": False}
-                return Response(helper.render(False, data, "account is not activated", status.HTTP_401_UNAUTHORIZED))
+                return Response(CommonHelper.render(False, data, "account is not activated", status.HTTP_200_OK))
 
             if kwargs.get(user.EMAIL_FIELD, False) and not user.verification.email_verified:
                 data = {"email verification": False}
-                return Response(helper.render(False, data, "email is not verified! you can not login with email", status.HTTP_401_UNAUTHORIZED))
+                return Response(CommonHelper.render(False, data, "email is not verified! you can not login with email",
+                                                    status.HTTP_200_OK))
 
             elif kwargs.get(user.USERNAME_FIELD, False) and not user.verification.mobile_verified:
                 data = {"mobile verification": False}
-                return Response(helper.render(False, data, "mobile is not verified! you can not login with mobile", status.HTTP_401_UNAUTHORIZED))
-
+                return Response(
+                    CommonHelper.render(False, data, "mobile is not verified! you can not login with mobile",
+                                        status.HTTP_200_OK))
 
         except Exception as ex:
-            return Response(helper.render(False, None, ex.args, status.HTTP_500_INTERNAL_SERVER_ERROR))
-        data = {"token": user.token,
-                "user": serializers.UserSerializer(user, context={'request': request}).data
-                }
-        return Response(helper.render(True, data, "success", status.HTTP_201_CREATED))
+            return Response(CommonHelper.render(False, None, ex.args, status.HTTP_200_OK))
+        data = {"token": user.token}
+        return Response(CommonHelper.render(True, data, "success", status.HTTP_201_CREATED))
 
 
-class Profiles(generics.ListAPIView):
-    model = models.User
-    serializer_class = serializers.UserSerializer
+class UserExists(generics.RetrieveAPIView):
+    permission_classes = (permissions.AllowAny,)
+    serializer_class = serializers.ResentSerializer
 
-    def list(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         """
-
+        Method to check user already exists or not
         :param request:
         :param args:
         :param kwargs:
         :return:
         """
-        queryset = self.model.objects.all()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(helper.render(True, serializer.data, "success", status.HTTP_201_CREATED))
+        try:
+            serializer = self.serializer_class(data=kwargs)
+            # if not serializer.is_valid():
+            #     raise serializers.ValidationError(serializer.errors, code=status.HTTP_200_OK)
+            kwargs = CommonHelper.email_or_mobile(serializer.initial_data["device"])
+            user = CommonHelper.user_exists(**kwargs)
+            if not user:
+                return Response(CommonHelper.render(False, None, _("User not exists"), status.HTTP_200_OK))
+        except Exception as ex:
+            return Response(CommonHelper.render(False, None, ex.args, status.HTTP_200_OK))
+        return Response(CommonHelper.render(True, True, _("User found"), status.HTTP_200_OK))
+
+
+class RefreshToken(JSONWebTokenAPIView):
+    serializer_class = RefreshJSONWebTokenSerializer
+
+    def post(self, request, *args, **kwargs):
+        """
+        Method to refresh the token. Token refresh only valid till original token not expired
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        response = super(RefreshToken, self).post(request, *args, **kwargs)
+        if response.status_code == status.HTTP_200_OK:
+            return Response(CommonHelper.render(True, response.data, "success", response.status_code))
+        return Response(CommonHelper.render(False, None, response.data["non_field_errors"], response.status_code))
+
+
+class Profile(generics.RetrieveAPIView):
+    model = models.User
+    serializer_class = serializers.UserSerializer
+
+    def get(self, request, *args, **kwargs):
+        """
+        Method to get authenticate user profile information
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        serializer = self.get_serializer(request.user)
+        return Response(CommonHelper.render(True, serializer.data, "success", status.HTTP_201_CREATED))
+
+
+class Logout(generics.RetrieveAPIView):
+
+    def get(self, request, *args, **kwargs):
+        """
+        Method to logout and invalid the token
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        try:
+            user = request.user
+            user.jwt_secret = uuid.uuid4()
+            user.save()
+            logout(request)
+        except Exception as ex:
+            return Response(CommonHelper.render(False, None, ex.args, status.HTTP_200_OK))
+        return Response(CommonHelper.render(True, None, "Logout Successfully", status.HTTP_201_CREATED))

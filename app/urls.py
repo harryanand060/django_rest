@@ -1,7 +1,7 @@
-"""smas_client URL Configuration
+"""enterprise_app URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/2.1/topics/http/urls/
+    https://docs.djangoproject.com/en/3.1/topics/http/urls/
 Examples:
 Function views
     1. Add an import:  from my_app import views
@@ -20,8 +20,8 @@ from rest_framework.documentation import include_docs_urls
 
 urlpatterns = [
     path('', lambda request: redirect('docs/', permanent=False)),
-    re_path(r'^docs/', include_docs_urls(title='Rest API', authentication_classes=[],
-                                         permission_classes=[])),
     path('admin/', admin.site.urls),
-    path('api/user/', include('account.urls')),
+    path('api/account/', include('account.urls')),
+    re_path(r'^docs/', include_docs_urls (title='Rest API', public=True, authentication_classes=[],
+                                         permission_classes=[])),
 ]

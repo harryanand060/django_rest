@@ -1,11 +1,10 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
-
-from hashlib import sha1
 import hmac
+import six
+from hashlib import sha1
 from struct import pack
 from time import time
 
-import six
 
 if six.PY3:
     iterbytes = iter

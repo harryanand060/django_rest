@@ -1,47 +1,60 @@
-from binascii import unhexlify
+import logging
+import time
+import uuid
 
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
+from binascii import unhexlify
+from django.contrib.auth.models import AbstractBaseUser
+from django.contrib.auth.models import PermissionsMixin
 from django.db import models
 from django.utils.text import gettext_lazy as _
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.core.validators import validate_email
-from .utils import validators, topt, account_helper
-from .auth.manager import UserManager, DeviceManager
 from django.conf import settings
 from rest_framework_jwt.settings import api_settings
-import logging
-import time
 
-from datetime import datetime
+from account.lib.auth.manager import UserManager
+from account.lib.auth.manager import DeviceManager
+from account.utils import AccountHelper
 
-# from . import validators
+from common.core import topt
+from common.core.validators import validate_mobile
+from common.core.validators import hex_validator
+from common.helper import CommonHelper
 
 logger = logging.getLogger("accounts.token")
+
+
 # Create your models here.
-validate_mobile = validators.MobileValidator()
+def get_jwt_secret(user_model):
+    return user_model.jwt_secret
 
 
 class User(AbstractBaseUser, PermissionsMixin):
+    """
+
+    """
     mobile = models.CharField(
         _('mobile'), max_length=16, unique=True,
-        help_text=_("Required. mobile number must be entered in the format: '+999999999'."),
+        help_text=_("required. mobile number must be entered in the format: '+999999999'."),
         validators=[validate_mobile],
-        error_messages={'unique': _("A user with that mobile no already exists")}, )
+        error_messages={'unique': _("user with mobile already exists")}, )
 
     email = models.EmailField(
         _('Email Address'), max_length=100, unique=True,
-        help_text=_("Required. email number must be entered in the format: 'abc@abc.com'."),
+        help_text=_("required. email number must be entered in the format: 'abc@abc.com'."),
         validators=[validate_email],
-        error_messages={'unique': _("A user with that email already exists.")}, )
+        error_messages={'unique': _("user with email already exists.")}, )
 
     password = models.CharField(
         _('Password'), max_length=128,
-        help_text=_("Required. enter password."), )
+        help_text=_("required. enter password."), )
+
+    jwt_secret = models.UUIDField(default=uuid.uuid4)
 
     first_name = models.CharField(
         _('first name'), max_length=30, blank=False,
-        help_text=_('Required. Please enter name '), )
+        help_text=_('required. please enter name '), )
 
     last_name = models.CharField(_('last name'), max_length=150, blank=True)
     is_staff = models.BooleanField(
@@ -49,6 +62,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         default=False,
         help_text=_('Designates whether the user can log into this admin site.'),
     )
+    models.DateField()
     is_active = models.BooleanField(
         _('active'),
         default=False,
@@ -87,10 +101,13 @@ class User(AbstractBaseUser, PermissionsMixin):
         The `@property` decorator above makes this possible. `token` is called
         a "dynamic property".
         """
-        return self._generate_jwt_token()
+        jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
+        jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
+        token = jwt_encode_handler(jwt_payload_handler(self))
+        return token
 
     def clean(self):
-        super.clean()
+        # super.clean()
         self.email = self.__class__.objects.normalize_email(self.email)
 
     def get_full_name(self):
@@ -108,35 +125,31 @@ class User(AbstractBaseUser, PermissionsMixin):
         """Send an email to this user."""
         send_mail(subject, message, from_email, [self.email], **kwargs)
 
-    def _generate_jwt_token(self):
-        jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
-        jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
-        token = jwt_encode_handler(jwt_payload_handler(self))
-        return token
 
-
-def default_key():
-    return validators.random_hex(20).decode()
-
+# def default_key():
+#     return validators.random_hex(20).decode()
 
 class Verification(models.Model):
+    """
+
+    """
     user = models.OneToOneField(User, related_name='verification', on_delete=models.CASCADE)
     unverified_mobile = models.CharField(
         _('mobile'), max_length=16, unique=True,
         help_text=_("Required. mobile number must be entered in the format: '+999999999'."),
         validators=[validate_mobile],
-        error_messages={'unique': _("A user with that mobile no already exists.")}, )
+        error_messages={'unique': _("user with mobile no already exists.")}, )
 
     unverified_email = models.EmailField(
         _('Email Address'), max_length=100, unique=True,
         help_text=_("Required. email number must be entered in the format: 'abc@abc.com'."),
         validators=[validate_email],
-        error_messages={'unique': _("A user with that email already exists.")}, )
+        error_messages={'unique': _("user with email already exists.")}, )
 
     secret_key = models.CharField(
         max_length=40,
-        default=default_key,
-        validators=[validators.hex_validator],
+        default=CommonHelper.secret_key,
+        validators=[hex_validator],
         help_text="Hex-encoded secret key to generate totp tokens.",
         unique=True,
     )
@@ -162,6 +175,7 @@ class Verification(models.Model):
     mobile_verified = models.BooleanField(default=False)
     email_verified = models.BooleanField(default=False)
     is_reset = models.BooleanField(default=False)
+
     step = settings.TOTP_TOKEN_VALIDITY
     digits = settings.TOTP_DIGITS
 
@@ -180,23 +194,42 @@ class Verification(models.Model):
 
     @property
     def bin_key(self):
+        """
+
+        :return:
+        """
         return unhexlify(self.secret_key.encode())
 
     def totp_obj(self):
+        """
+        Method to create TOPT object
+        :return:
+        """
         totp = topt.TOTP(key=self.bin_key, step=self.step, digits=self.digits)
         totp.time = time.time()
         return totp
 
     def generate_otp(self):
+        """
+        Method to generate OTP and sent Verification mail and SMS
+        :return:
+        """
         totp = self.totp_obj()
         token = str(totp.token()).zfill(self.digits)
         time_validity = self.step // 60
-        logger.debug("Token has been sent to %s " % self.unverified_mobile)
-        account_helper.verification_mail(self.user, token, time_validity)
-        account_helper.sent_sms(self.user, token, time_validity)
+        logger.debug(f"Token has been sent to {self.unverified_mobile}")
+        AccountHelper.verification_mail(self.user, token, time_validity)
+        AccountHelper.sent_sms(self.user, token, time_validity)
         return token
 
     def verify_otp(self, type, token, tolerance=0):
+        """
+
+        :param type:
+        :param token:
+        :param tolerance:
+        :return:
+        """
         verified = False
         totp = self.totp_obj()
         if type == "email":

@@ -1,7 +1,9 @@
-from rest_framework import serializers, status
-from .utils import validators
+from rest_framework import serializers
+from rest_framework import status
 from django.utils.text import gettext_lazy as _
-from .models import User
+
+from common.core.validators import validate_user
+from account.models import User, Verification
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -20,7 +22,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
 class UserVerifySerializer(serializers.ModelSerializer):
     otp = serializers.IntegerField(required=True)
-    device = serializers.CharField(help_text=_("Email Or Mobile"), validators=[validators.validate_user], required=True)
+    device = serializers.CharField(help_text=_("Email Or Mobile"), validators=[validate_user], required=True)
 
     class Meta:
         model = User
@@ -28,7 +30,7 @@ class UserVerifySerializer(serializers.ModelSerializer):
 
 
 class ResentSerializer(serializers.ModelSerializer):
-    device = serializers.CharField(help_text=_("Email Or Mobile"), validators=[validators.validate_user], required=True)
+    device = serializers.CharField(help_text=_("Email Or Mobile"), validators=[validate_user], required=True)
 
     class Meta:
         model = User
@@ -36,8 +38,9 @@ class ResentSerializer(serializers.ModelSerializer):
 
 
 class UserLoginSerializer(serializers.ModelSerializer):
-    device = serializers.CharField(help_text=_("Email Or Mobile"), validators=[validators.validate_user], required=True)
-    password = serializers.CharField(max_length=128, min_length=8, required=True, write_only=True,
+    device = serializers.CharField(help_text=_("Email Or Mobile"), validators=[validate_user], required=True)
+    password = serializers.CharField(help_text=_("Password"), max_length=128, min_length=8, required=True,
+                                     write_only=True,
                                      style={'input_type': 'password'})
 
     class Meta:
@@ -45,7 +48,19 @@ class UserLoginSerializer(serializers.ModelSerializer):
         fields = ('device', 'password',)
 
 
+class VerificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Verification
+        fields = ('mobile_verified','email_verified')
+
+
 class UserSerializer(serializers.ModelSerializer):
+    verification = VerificationSerializer(read_only=True)
+
     class Meta:
         model = User
-        fields = ('mobile', 'email', 'is_active','is_superuser')
+        fields = ('id','mobile', 'email', 'is_active', 'is_superuser', 'verification')
+
+
+class ValidationError(serializers.ValidationError):
+    status_code = status.HTTP_200_OK
