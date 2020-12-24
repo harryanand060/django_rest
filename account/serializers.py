@@ -41,8 +41,7 @@ class ResentSerializer(serializers.ModelSerializer):
 class UserLoginSerializer(serializers.ModelSerializer):
     device = serializers.CharField(help_text=_("Email Or Mobile"), validators=[validate_user], required=True)
     password = serializers.CharField(help_text=_("Password"), max_length=128, min_length=8, required=True,
-                                     write_only=True,
-                                     style={'input_type': 'password'})
+                                     write_only=True, style={'input_type': 'password'})
 
     class Meta:
         model = User

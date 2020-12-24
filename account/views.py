@@ -73,7 +73,7 @@ class Verify(generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
         """
-        Verify Registred email or mobile with otp
+        Verify Registered email or mobile with otp
         mobile otp only verify mobile so user can only login with mobile
         email otp only verify email so user can only login with email
         :param request: using this parameter user get email or mobile no.

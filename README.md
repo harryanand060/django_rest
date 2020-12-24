@@ -4,6 +4,10 @@ We can register with our mobile or email after register verification OTP sent to
 Both email and mobile has different OTP. so when user input the OTP from email then email verified and
 if OTP input from mobile then mobile varified. User also sent the resent OTP if mail or SMS not found.
 
+## Docs
+    
+https://github.com/harryanand060/django_rest/wiki
+
 ##  Branch
 
 ##### development: 
