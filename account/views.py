@@ -13,6 +13,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth import logout
 from django.contrib.auth import login
 
+from account.serializers import UserChangePasswordSerializer
 from common.helper import CommonHelper
 from account import serializers
 from account import models
@@ -126,7 +127,7 @@ class Resent(generics.CreateAPIView):
             if not user:
                 return Response(CommonHelper.render(False, None, "User not exists", status.HTTP_200_OK))
             user.verification.generate_otp()
-            message = f"Verification Token sent to {user.mobile} and {user.email}"
+            message = f"Verification OTP sent to {user.mobile} and {user.email}"
         except Exception as ex:
             return Response(CommonHelper.render(False, None, ex.args, status.HTTP_200_OK))
         return Response(CommonHelper.render(True, None, message, status.HTTP_201_CREATED))
@@ -205,6 +206,16 @@ class UserExists(generics.RetrieveAPIView):
         except Exception as ex:
             return Response(CommonHelper.render(False, None, ex.args, status.HTTP_200_OK))
         return Response(CommonHelper.render(True, True, _("User found"), status.HTTP_200_OK))
+
+
+class ChangePassword(generics.GenericAPIView):
+    serializer_class = UserChangePasswordSerializer
+
+    def put(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(CommonHelper.render(True, True, _("Password Updated Successfully"), status.HTTP_200_OK))
 
 
 class RefreshToken(JSONWebTokenAPIView):

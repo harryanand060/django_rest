@@ -16,12 +16,20 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include, re_path
 from django.shortcuts import redirect
+from rest_framework.schemas import get_schema_view
 from rest_framework.documentation import include_docs_urls
 
 urlpatterns = [
+    path('openapi', get_schema_view(
+        title="Your Project",
+        description="API for all things …",
+        authentication_classes=[],
+        permission_classes=[],
+        version="1.0.0"
+    ), name='openapi-schema'),
     path('', lambda request: redirect('docs/', permanent=False)),
     path('admin/', admin.site.urls),
     path('api/account/', include('account.urls')),
-    re_path(r'^docs/', include_docs_urls (title='Rest API', public=True, authentication_classes=[],
+    re_path(r'^docs/', include_docs_urls(title='Rest API', public=True, authentication_classes=[],
                                          permission_classes=[])),
 ]

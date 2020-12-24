@@ -7,6 +7,7 @@ urlpatterns = [
     path(r'resent', views.Resent.as_view(), name='reset'),
     path(r'login', views.Login.as_view(), name='login'),
     path(r'exist/<str:device>', views.UserExists.as_view(), name='exist'),
+    path(r'change-password', views.ChangePassword.as_view(), name='change-password'),
     path(r'profile', views.Profile.as_view(), name='profile'),
     path(r'logout', views.Logout.as_view(), name='logout'),
     path(r'token-refresh/', views.RefreshToken.as_view(), name='refresh-token')

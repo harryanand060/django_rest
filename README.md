@@ -6,6 +6,9 @@ if OTP input from mobile then mobile varified. User also sent the resent OTP if 
 
 ##  Branch
 
+##### development: 
+compatible with >=django 3.0
+
 ##### Master: 
 compatible with django2.0
 
@@ -15,23 +18,47 @@ compatible with >=django3.0
 ## Installation
 
 1. Download or clone project from git.
+   
 
-2. Create project with virtual enviroment also install pip [pip](https://pip.pypa.io/en/stable/).
+      for WINDOWS Install Git Bash 
 
-3.
+      https://git-scm.com/downloads
+
+      after install the Git Bash 
+      
+      git clone https://github.com/harryanand060/django_rest.git
+
+2. Create project with virtual environment also install pip [pip](https://pip.pypa.io/en/stable/).
+
+3. Install prerequisites  
+
+
     ```bash
        pip isntall -r requirement.txt
     ```
 (after coping the project to your directory where you create projcet).
 
-4. Inside smas_client we have local_setting so change
+4. Inside app we have .env.test rename to .env and then update 
+    
+    
+    Generate SECRET_KEY
+      
+    python manage.py generate_key -sp -d app
+        
+    Database Settings
 
-    ### EMAIL Setting
+        DATABASE_NAME=db_name
+        DATABASE_USER=root
+        DATABASE_PASSWORD=
+        DATABASE_HOST=localhost
+   
+    EMAIL Setting
     
     EMAIL_HOST_USER = '**********@gmail.com'
     EMAIL_HOST_PASSWORD = '*******'.
     
-    ### SMS Getway Setting
+    SMS Getway Setting
+
      'url': 'http://sms.abc.com/sendSMS',
      'apikey': '**********************',
      'username': '*****************',
@@ -40,6 +67,8 @@ compatible with >=django3.0
     
 
 5. now open terminal and path set to your current project and run
+   
+
     ```bash
         python manage.py makemigrations
     ```
@@ -49,6 +78,8 @@ compatible with >=django3.0
 
 6. now create super user
 
+
+
        ```bash
             python manage.py createsuperuser
        ```
@@ -56,11 +87,15 @@ compatible with >=django3.0
    and follow the steps.
 
 7. now Run
+   
+
     ```bash
         python manage.py runserver
     ```
 
 #Testing
+
+![img.png](img.png)
 
 Open the browser with given runserver IP for ex: http://127.0.0.1:8000/
 Here you get all the listed API Docs

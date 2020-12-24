@@ -4,6 +4,7 @@ import uuid
 
 from binascii import unhexlify
 from django.contrib.auth.models import AbstractBaseUser
+from django.contrib.auth.models import update_last_login
 from django.contrib.auth.models import PermissionsMixin
 from django.db import models
 from django.utils.text import gettext_lazy as _
@@ -15,7 +16,8 @@ from rest_framework_jwt.settings import api_settings
 
 from account.lib.auth.manager import UserManager
 from account.lib.auth.manager import DeviceManager
-from account.utils import AccountHelper
+from account.utils import verification_mail
+from account.utils import sent_sms
 
 from common.core import topt
 from common.core.validators import validate_mobile
@@ -101,9 +103,14 @@ class User(AbstractBaseUser, PermissionsMixin):
         The `@property` decorator above makes this possible. `token` is called
         a "dynamic property".
         """
-        jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
-        jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
-        token = jwt_encode_handler(jwt_payload_handler(self))
+        try:
+            jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
+            jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
+            token = jwt_encode_handler(jwt_payload_handler(self))
+        except Exception as ex:
+            raise Exception(f"Token Generation Failed {ex}")
+        # Update last login time after successful login
+        update_last_login(None, self)
         return token
 
     def clean(self):
@@ -218,8 +225,8 @@ class Verification(models.Model):
         token = str(totp.token()).zfill(self.digits)
         time_validity = self.step // 60
         logger.debug(f"Token has been sent to {self.unverified_mobile}")
-        AccountHelper.verification_mail(self.user, token, time_validity)
-        AccountHelper.sent_sms(self.user, token, time_validity)
+        verification_mail(self.user, token, time_validity)
+        sent_sms(self.user, token, time_validity)
         return token
 
     def verify_otp(self, type, token, tolerance=0):
