@@ -28,6 +28,7 @@ compatible with >=django3.0
       
       git clone https://github.com/harryanand060/django_rest.git
 
+
 2. Create project with virtual environment also install pip [pip](https://pip.pypa.io/en/stable/).
 
 3. Install prerequisites  
@@ -36,6 +37,7 @@ compatible with >=django3.0
     ```bash
        pip isntall -r requirement.txt
     ```
+
 (after coping the project to your directory where you create projcet).
 
 4. Inside app we have .env.test rename to .env and then update 
