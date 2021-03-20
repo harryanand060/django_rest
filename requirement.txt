@@ -9,7 +9,7 @@ djangorestframework==3.12.2
 djangorestframework-jwt==1.11.0
 idna==2.10
 itypes==1.2.0
-Jinja2==2.11.2
+Jinja2==2.11.3
 MarkupSafe==1.1.1
 mysqlclient==2.0.2
 PyJWT==1.7.1
