@@ -28,9 +28,14 @@ SECRET_KEY = env("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env("DEBUG")
 
-CORS_ORIGIN_ALLOW_ALL = True
+ALLOWED_HOSTS = ["http://localhost:4200", "127.0.0.1"]
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+CORS_ORIGIN_ALLOW_ALL = False
+
+CORS_ORIGIN_WHITELIST = [
+    "http://localhost:4200",
+    "http://127.0.0.1:9000"
+]
 
 # Application definition
 DEFAULT_APPS = [
@@ -40,7 +45,8 @@ DEFAULT_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework'
+    'rest_framework',
+    'corsheaders'
 ]
 
 LOCAL_APPS = [
@@ -51,6 +57,7 @@ LOCAL_APPS = [
 INSTALLED_APPS = DEFAULT_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -134,7 +141,6 @@ try:
     from app.auth_settings import *
 except ImportError as ex:
     raise Exception(f"Authentication Settings Not Imported {ex}")
-
 
 # celery
 CELERY_BROKER_URL = 'redis://localhost:6379'

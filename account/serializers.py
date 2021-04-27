@@ -100,7 +100,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'mobile', 'email', 'is_active', 'is_superuser', 'verification')
+        fields = ('first_name', 'last_name', 'id', 'mobile', 'email', 'is_active', 'is_superuser', 'verification')
 
 
 class ValidationError(serializers.ValidationError):

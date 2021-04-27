@@ -1,7 +1,5 @@
-import fileinput
 import os
 import re
-import sys
 
 from os import urandom
 from binascii import hexlify
